@@ -1,0 +1,27 @@
+input:
+  # Use "0" for webcam, or RTSP URL, or path to video file
+  source: "data/sample.mp4"
+  # Example RTSP:
+  # source: "rtsp://admin:password@192.168.1.100:554/stream1"
+
+model:
+  name: "yolov8n.pt"  # nano model for speed
+  conf_threshold: 0.5
+
+tracking:
+  max_age: 30
+  min_hits: 3
+  iou_threshold: 0.3
+
+virtual_fence:
+  enabled: true
+  # Polygon in pixel coordinates (example for 640x480 frame)
+  polygon:
+    - [200, 200]
+    - [440, 200]
+    - [440, 360]
+    - [200, 360]
+
+logging:
+  log_file: "events.log"
+  show_debug: true  # show annotated video window
