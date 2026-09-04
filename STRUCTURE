@@ -1,0 +1,59 @@
+ibvap/
+├── README.md
+├── LICENSE
+├── requirements.txt
+├── docker/
+│   ├── Dockerfile
+│   └── docker-compose.yml
+├── configs/
+│   ├── default.yaml
+│   └── camera_profiles.yaml
+├── src/
+│   ├── __init__.py
+│   ├── main.py
+│   ├── stream_ingest.py
+│   ├── detection/
+│   │   ├── __init__.py
+│   │   ├── yolo_detector.py
+│   │   └── face_detector.py
+│   ├── tracking/
+│   │   ├── __init__.py
+│   │   └── deepsort_tracker.py
+│   ├── anpr/
+│   │   ├── __init__.py
+│   │   ├── plate_detector.py
+│   │   └── ocr_reader.py
+│   ├── analytics/
+│   │   ├── __init__.py
+│   │   ├── virtual_fence.py
+│   │   ├── intrusion_detector.py
+│   │   └── night_motion.py
+│   ├── alerts/
+│   │   ├── __init__.py
+│   │   ├── alert_manager.py
+│   │   └── webhook_sender.py
+│   ├── logging/
+│   │   ├── __init__.py
+│   │   └── event_logger.py
+│   └── utils/
+│       ├── __init__.py
+│       ├── config_loader.py
+│       └── video_utils.py
+├── tests/
+│   ├── test_detection.py
+│   ├── test_anpr.py
+│   └── test_virtual_fence.py
+├── notebooks/
+│   └── exploration_anpr.ipynb
+├── data/
+│   ├── sample_videos/
+│   └── test_images/
+├── docs/
+│   ├── architecture.md
+│   ├── api_spec.md
+│   └── patent_notes.md
+└── dashboards/
+    └── simple_web_ui/
+        ├── app.py
+        └── templates/
+            └── index.html
