@@ -1,0 +1,81 @@
+import cv2
+from src.utils import load_config
+from src.stream_ingest import CameraStream
+from src.detection import YOLODetector
+from src.tracking import DeepSORTTracker
+from src.analytics import VirtualFence
+from src.logging import EventLogger
+
+def main():
+    cfg = load_config("configs/default.yaml")
+
+    source = cfg["input"]["source"]
+    model_name = cfg["model"]["name"]
+    conf_threshold = cfg["model"]["conf_threshold"]
+
+    max_age = cfg["tracking"]["max_age"]
+    min_hits = cfg["tracking"]["min_hits"]
+    iou_threshold = cfg["tracking"]["iou_threshold"]
+
+    fence_cfg = cfg["virtual_fence"]
+    fence_enabled = fence_cfg["enabled"]
+    polygon = fence_cfg["polygon"]
+
+    log_file = cfg["logging"]["log_file"]
+    show_debug = cfg["logging"]["show_debug"]
+
+    stream = CameraStream(source)
+    detector = YOLODetector(model_name, conf_threshold)
+    tracker = DeepSORTTracker(max_age, min_hits, iou_threshold)
+    fence = VirtualFence(polygon, enabled=fence_enabled)
+    logger = EventLogger(log_file)
+
+    for frame in stream.read():
+        detections = detector.detect(frame)
+
+        # Filter to classes we care about for intrusion (e.g., person, car, truck)
+        relevant = [d for d in detections if d["class"] in ["person", "car", "truck", "bus", "motorcycle"]]
+
+        tracks = tracker.update(relevant, frame)
+
+        alert_triggered = False
+        for tr in tracks:
+            bbox = tr.get_state()
+            cx = (bbox[0] + bbox[2]) // 2
+            cy = (bbox[1] + bbox[3]) // 2
+
+            if fence.is_inside((cx, cy)):
+                alert_triggered = True
+                event_details = {
+                    "track_id": tr.track_id,
+                    "class": tr.class_name,
+                    "bbox": bbox,
+                    "zone": "virtual_fence"
+                }
+                logger.log_event("INTRUSION", event_details)
+
+        if show_debug:
+            out = frame.copy()
+            fence.draw_on_frame(out, color=(0, 255, 0), thickness=2)
+            for tr in tracks:
+                bbox = tr.get_state()
+                x1, y1, x2, y2 = bbox
+                color = (255, 0, 0) if fence.is_inside(((x1+x2)//2, (y1+y2)//2)) else (0, 0, 255)
+                cv2.rectangle(out, (x1, y1), (x2, y2), color, 2)
+                cv2.putText(out, f"ID:{tr.track_id} {tr.class_name}", (x1, y1-10),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+
+            if alert_triggered:
+                cv2.putText(out, "INTRUSION DETECTED", (10, 30),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2)
+
+            cv2.imshow("IBVAP", out)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+    stream.release()
+    if show_debug:
+        cv2.destroyAllWindows()
+
+if __name__ == "__main__":
+    main()
